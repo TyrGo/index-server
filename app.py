@@ -1,10 +1,10 @@
-from flask import Flask, jsonify, request
 import stripe
 import os
 from flask import Flask, request
 from flask_cors import CORS
 from indexgenerator import make_index
 from flask_mail import Mail, Message
+from config import PASSWORD, SECRET_KEY
 
 app = Flask(__name__)
 CORS(app)
@@ -14,7 +14,7 @@ app.config.update(
     MAIL_PORT=465,
     MAIL_USE_SSL=True,
     MAIL_USERNAME='getyourindex@gmail.com',
-    MAIL_PASSWORD='Indexer2020*'
+    MAIL_PASSWORD=PASSWORD
 )
 
 mail = Mail(app)
@@ -45,17 +45,14 @@ def send_index(email):
 
 # Set your secret key. Remember to switch to your live secret key in production!
 # See your keys here: https://dashboard.stripe.com/account/apikeys
-stripe.api_key = "sk_test_51HwFmRIk1oqEqzSa6p8GcS0BEskQDraYatJXMXVMTSReGGvRi0TVRdZgxKoKuEA2nCnIewSwi4PJvaxq2cexOiBJ00FyMj3YgO"
+stripe.api_key = SECRET_KEY
 
 
-@app.route('/pay', methods=['POST']) # https? set when deploying app!
+@app.route('/pay', methods=['POST'])
 def pay():
     email = request.json.get('email')
     amt = request.json.get('amount')
     amt = (int(amt) * 100)
-
-    print(email) #to remove
-    print(amt) #to remove
 
     if not email or not amt:
         return 'please submit valid email and amount', 400
@@ -63,10 +60,8 @@ def pay():
     intent = stripe.PaymentIntent.create(
         amount=amt,
         currency='usd',
-        payment_method_types=['card'],  # needed?
+        payment_method_types=['card'],
         receipt_email=email,
     )
-
-    print(intent)
 
     return {'client_secret': intent['client_secret']}
